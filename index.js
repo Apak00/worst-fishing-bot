@@ -1,107 +1,54 @@
 let robot = require("robotjs");
-let Jimp = require("jimp");
+const delay = require("delay");
+const { captureImage } = require("./capture");
 
 const screensize = robot.getScreenSize();
 const startDelay = 5000;
-const width = 80;
-const height = 40;
-const corX = screensize.width / 2 - width / 2;
-const corY = 50;
-const targetR = 91;
-const targetG = 87;
-const targetB = 76;
-const failMargin = 2;
-let pullerId;
+
+let fishinstarted;
 let finderId;
-let pulling;
+let repairCounter = 0;
 
-const fileName = "asd.png";
-
-const main = () => {
-  function screenCaptureToFile(robotScreenPic) {
-    return new Promise((resolve, reject) => {
-      try {
-        const image = new Jimp(robotScreenPic.width, robotScreenPic.height);
-        let pos = 0;
-        image.scan(
-          0,
-          0,
-          image.bitmap.width,
-          image.bitmap.height,
-          (x, y, idx) => {
-            /* eslint-disable no-plusplus */
-            image.bitmap.data[idx + 2] = robotScreenPic.image.readUInt8(pos++);
-            image.bitmap.data[idx + 1] = robotScreenPic.image.readUInt8(pos++);
-            image.bitmap.data[idx + 0] = robotScreenPic.image.readUInt8(pos++);
-            image.bitmap.data[idx + 3] = robotScreenPic.image.readUInt8(pos++);
-            /* eslint-enable no-plusplus */
-          }
-        );
-        resolve(image);
-      } catch (e) {
-        console.error(e);
-        reject(e);
-      }
-    });
-  }
-
-  const img = robot.screen.capture(corX, corY, width, height);
-
-  screenCaptureToFile(img).then((res) => {
-    res.write("asd.png");
-  });
-};
-
-const findTarget = () => {
-  const img = robot.screen.capture(corX, corY, width, height);
-  for (let i = 0; i < width; i++) {
-    for (let f = 0; f < height; f++) {
-      const color = img.colorAt(i, f);
-      const R = parseInt(color.substring(0, 2), 16);
-      const G = parseInt(color.substring(2, 4), 16);
-      const B = parseInt(color.substring(4, 6), 16);
-
-      // target found
-      if (
-        R > targetR - failMargin &&
-        R < targetR + failMargin &&
-        G > targetG - failMargin &&
-        G < targetG + failMargin &&
-        B > targetB - failMargin &&
-        B < targetB + failMargin
-      ) {
-        if (!pulling) {
-          console.log("TARGET FOUND");
-          clearInterval(finderId);
-          robot.mouseClick();
-          pulling = true;
-          pullerId = setInterval(pullFish, 1000);
-        }
-      }
-    }
+const seizeFishin = async () => {
+  if (!fishinstarted && findColor(91, 87, 76, 2, 40, 40, screensize.width / 2, 70)) {
+    robot.mouseClick();
+    fishinstarted = true;
+    pullFish();
   }
 };
 
 const pullFish = () => {
-  const img = robot.screen.capture(
-    screensize.width / 2 - 250,
-    0,
-    500,
-    screensize.height
-  );
+  console.log("CALLED");
+  let pullCount = 0;
+  let pullerId = setInterval(async () => {
+    if (pullCount < 14) {
+      await pullOnce();
+      pullCount++;
+    } else {
+      clearInterval(pullerId);
+      fishinstarted = false;
+      pullCount = 0;
+    }
+  }, 2000);
+};
 
-  let stopIndicator = 0;
+const pullOnce = async () => {
+  robot.mouseToggle("down");
+  await delay(1000);
+  robot.mouseToggle("up");
+};
 
+const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, corY, capture) => {
+  const img = robot.screen.capture(corX, corY, width, height);
   for (let i = 0; i < width; i++) {
     for (let f = 0; f < height; f++) {
       const color = img.colorAt(i, f);
       const R = parseInt(color.substring(0, 2), 16);
       const G = parseInt(color.substring(2, 4), 16);
       const B = parseInt(color.substring(4, 6), 16);
-      const tarR = 33;
-      const tarG = 238;
-      const tarB = 179;
-      console.log(`${R}-${G}-${B}`);
+      if (capture) {
+        captureImage(img);
+      }
       // target found
       if (
         R > targetR - failMargin &&
@@ -111,28 +58,50 @@ const pullFish = () => {
         B > targetB - failMargin &&
         B < targetB + failMargin
       ) {
-        console.log("FISH IS GREEN");
-        stopIndicator--;
-
-        if (!pulling) {
-          robot.mouseToggle("down");
-          pulling = true;
-          setTimeout(function () {
-            robot.mouseToggle("up");
-            pulling = false;
-          }, 2000);
-        }
+        return true;
       }
     }
   }
+};
 
-  stopIndicator++;
+const repair = async () => {
+  await delay(5000);
+  robot.keyTap("tab");
+  await delay(1000);
+  robot.moveMouse(screensize.width / 2 - 350, screensize.height - 50);
+  await delay(1000);
+  robot.mouseClick();
+  await delay(1000);
+  robot.moveMouse(screensize.width / 2 + 100, screensize.height / 2 + 120);
+  await delay(1000);
+  robot.mouseClick();
+  await delay(1000);
+  robot.keyTap("escape");
+  await delay(2000);
+  robot.keyTap("f3");
+  await delay(2000);
+};
 
-  if (stopIndicator > 10 && !pulling) {
-    clearInterval(pullerId);
-    finderId = setInterval(findTarget, 300);
+const startIfStopped = async () => {
+  if (findColor(240, 240, 240, 15, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10)) {
+    await delay(2900);
+    if (findColor(240, 240, 240, 15, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10)) {
+      console.log("FOUND STOPPED");
+      fishinstarted = true;
+      repairCounter++;
+      if (repairCounter > 200) {
+        repairCounter = 0;
+        await repair();
+      }
+      robot.mouseToggle("down");
+      await delay(2000);
+      robot.mouseToggle("up");
+      await delay(900);
+
+      fishinstarted = false;
+    }
   }
 };
 
-setTimeout(main, startDelay);
-finderId = setInterval(findTarget, 300);
+finderId = setInterval(seizeFishin, 400);
+setInterval(startIfStopped, 10000);
