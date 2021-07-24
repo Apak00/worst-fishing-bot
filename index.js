@@ -38,7 +38,7 @@ const pullOnce = async () => {
   robot.mouseToggle("up");
 };
 
-const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, corY, capture) => {
+const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, corY) => {
   const img = robot.screen.capture(corX, corY, width, height);
   for (let i = 0; i < width; i++) {
     for (let f = 0; f < height; f++) {
@@ -46,9 +46,6 @@ const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, c
       const R = parseInt(color.substring(0, 2), 16);
       const G = parseInt(color.substring(2, 4), 16);
       const B = parseInt(color.substring(4, 6), 16);
-      if (capture) {
-        captureImage(img);
-      }
       // target found
       if (
         R > targetR - failMargin &&
@@ -96,7 +93,7 @@ const startIfStopped = async () => {
       robot.mouseToggle("down");
       await delay(2000);
       robot.mouseToggle("up");
-      await delay(900);
+      await delay(2000);
 
       fishinstarted = false;
     }
