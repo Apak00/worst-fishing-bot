@@ -21,7 +21,7 @@ const pullFish = () => {
   console.log("CALLED");
   let pullCount = 0;
   let pullerId = setInterval(async () => {
-    if (pullCount < 14) {
+    if (pullCount < 11) {
       await pullOnce();
       pullCount++;
     } else {
@@ -34,7 +34,7 @@ const pullFish = () => {
 
 const pullOnce = async () => {
   robot.mouseToggle("down");
-  await delay(1000);
+  await delay(1200);
   robot.mouseToggle("up");
 };
 
@@ -78,6 +78,7 @@ const repair = async () => {
   robot.keyTap("f3");
   await delay(2000);
 };
+let firstTime = true;
 
 const startIfStopped = async () => {
   if (findColor(240, 240, 240, 15, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10)) {
@@ -86,7 +87,7 @@ const startIfStopped = async () => {
       console.log("FOUND STOPPED");
       fishinstarted = true;
       repairCounter++;
-      if (repairCounter > 200) {
+      if (repairCounter > 35) {
         repairCounter = 0;
         await repair();
       }
@@ -102,3 +103,5 @@ const startIfStopped = async () => {
 
 finderId = setInterval(seizeFishin, 400);
 setInterval(startIfStopped, 10000);
+
+// Did this inside the source of robotjs https://github.com/octalmage/robotjs/issues/252
