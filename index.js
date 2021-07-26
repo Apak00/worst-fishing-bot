@@ -10,18 +10,21 @@ let finderId;
 let repairCounter = 0;
 
 const seizeFishin = async () => {
-  if (!fishinstarted && findColor(91, 87, 76, 2, 40, 40, screensize.width / 2, 70)) {
-    robot.mouseClick();
+  if (!fishinstarted && findColor(91, 87, 76, 2, 40, 40, screensize.width / 2 - 20, 70)) {
+    robot.mouseToggle("down");
     fishinstarted = true;
     pullFish();
   }
 };
 
-const pullFish = () => {
+const pullFish = async () => {
   console.log("CALLED");
+  repairCounter++;
+
   let pullCount = 0;
+
   let pullerId = setInterval(async () => {
-    if (pullCount < 11) {
+    if (pullCount < 10) {
       await pullOnce();
       pullCount++;
     } else {
@@ -62,7 +65,6 @@ const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, c
 };
 
 const repair = async () => {
-  await delay(5000);
   robot.keyTap("tab");
   await delay(1000);
   robot.moveMouse(screensize.width / 2 - 350, screensize.height - 50);
@@ -86,11 +88,14 @@ const startIfStopped = async () => {
     if (findColor(240, 240, 240, 15, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10)) {
       console.log("FOUND STOPPED");
       fishinstarted = true;
-      repairCounter++;
-      if (repairCounter > 35) {
+      robot.moveMouse(robot.getMousePos().x, robot.getMousePos().y + 150);
+      await delay(500);
+
+      if (repairCounter > 10) {
         repairCounter = 0;
         await repair();
       }
+
       robot.mouseToggle("down");
       await delay(2000);
       robot.mouseToggle("up");
@@ -102,6 +107,12 @@ const startIfStopped = async () => {
 };
 
 finderId = setInterval(seizeFishin, 400);
-setInterval(startIfStopped, 10000);
+setInterval(startIfStopped, 5000);
+
+// const myTest = async () => {
+//   await delay(2000);
+//   robot.moveMouse(robot.getMousePos().x, robot.getMousePos().y + 300);
+// };
+// myTest();
 
 // Did this inside the source of robotjs https://github.com/octalmage/robotjs/issues/252
