@@ -10,39 +10,36 @@ let finderId;
 let repairCounter = 0;
 
 const seizeFishin = async () => {
-  if (!fishinstarted && findColor(91, 87, 76, 2, 40, 40, screensize.width / 2 - 20, 70)) {
+  if (!fishinstarted && isThereMouseIcon()) {
     robot.mouseToggle("down");
     fishinstarted = true;
-    pullFish();
+    await pullFish();
   }
+
+  setTimeout(seizeFishin, 500);
 };
 
 const pullFish = async () => {
-  console.log("CALLED");
+  console.log("PULL");
   repairCounter++;
 
   let pullCount = 0;
-
-  let pullerId = setInterval(async () => {
-    if (pullCount < 10) {
-      await pullOnce();
-      pullCount++;
-    } else {
-      clearInterval(pullerId);
-      fishinstarted = false;
-      pullCount = 0;
-    }
-  }, 2000);
+  while (pullCount < 10) {
+    pullCount++;
+    robot.mouseToggle("down");
+    await delay(1200);
+    robot.mouseToggle("up");
+    await delay(800);
+  }
+  pullCount = 0;
+  fishinstarted = false;
 };
 
-const pullOnce = async () => {
-  robot.mouseToggle("down");
-  await delay(1200);
-  robot.mouseToggle("up");
-};
-
-const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, corY) => {
+const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, corY, capture) => {
   const img = robot.screen.capture(corX, corY, width, height);
+  if (capture) {
+    captureImage(img);
+  }
   for (let i = 0; i < width; i++) {
     for (let f = 0; f < height; f++) {
       const color = img.colorAt(i, f);
@@ -62,6 +59,7 @@ const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, c
       }
     }
   }
+  return false;
 };
 
 const repair = async () => {
@@ -80,39 +78,39 @@ const repair = async () => {
   robot.keyTap("f3");
   await delay(2000);
 };
-let firstTime = true;
 
 const startIfStopped = async () => {
-  if (findColor(240, 240, 240, 15, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10)) {
-    await delay(2900);
-    if (findColor(240, 240, 240, 15, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10)) {
-      console.log("FOUND STOPPED");
-      fishinstarted = true;
-      robot.moveMouse(robot.getMousePos().x, robot.getMousePos().y + 150);
-      await delay(500);
+  if (isCrossHairOn() && !fishinstarted) {
+    console.log("FOUND STOPPED", repairCounter);
+    fishinstarted = true;
+    robot.moveMouse(robot.getMousePos().x, robot.getMousePos().y + 150);
+    await delay(500);
 
-      if (repairCounter > 10) {
-        repairCounter = 0;
-        await repair();
-      }
-
-      robot.mouseToggle("down");
-      await delay(2000);
-      robot.mouseToggle("up");
-      await delay(2000);
-
-      fishinstarted = false;
+    if (repairCounter > 10) {
+      repairCounter = 0;
+      await repair();
     }
+
+    robot.mouseToggle("down");
+    await delay(2000);
+    robot.mouseToggle("up");
+    await delay(1000);
+
+    fishinstarted = false;
+    setTimeout(startIfStopped, 5000);
   }
 };
 
-finderId = setInterval(seizeFishin, 400);
+const isCrossHairOn = () => {
+  return findColor(240, 240, 240, 15, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10);
+};
+
+const isThereMouseIcon = () => {
+  return findColor(91, 87, 76, 2, 40, 20, screensize.width / 2, 60);
+};
+
+// Recursive setTimeout for that async operations in function body, instead of setInterval
+seizeFishin();
 setInterval(startIfStopped, 5000);
 
-// const myTest = async () => {
-//   await delay(2000);
-//   robot.moveMouse(robot.getMousePos().x, robot.getMousePos().y + 300);
-// };
-// myTest();
-
-// Did this inside the source of robotjs https://github.com/octalmage/robotjs/issues/252
+// Did this inside the source of robotjs https://github.com/octalmage/robotjs/issues/252 and rebuild robotjs
