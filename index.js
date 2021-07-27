@@ -24,12 +24,12 @@ const pullFish = async () => {
   repairCounter++;
 
   let pullCount = 0;
-  while (pullCount < 10) {
+  while (pullCount < 8) {
     pullCount++;
     robot.mouseToggle("down");
-    await delay(1200);
+    await delay(2000);
     robot.mouseToggle("up");
-    await delay(800);
+    await delay(1300);
   }
   pullCount = 0;
   fishinstarted = false;
@@ -83,10 +83,10 @@ const startIfStopped = async () => {
   if (isCrossHairOn() && !fishinstarted) {
     console.log("FOUND STOPPED", repairCounter);
     fishinstarted = true;
-    robot.moveMouse(robot.getMousePos().x, robot.getMousePos().y + 150);
-    await delay(500);
+     robot.moveMouse(robot.getMousePos().x, robot.getMousePos().y + 150);
 
-    if (repairCounter > 10) {
+    if (repairCounter > 20) {
+      await delay(2000);
       repairCounter = 0;
       await repair();
     }
@@ -102,11 +102,11 @@ const startIfStopped = async () => {
 };
 
 const isCrossHairOn = () => {
-  return findColor(240, 240, 240, 15, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10);
+  return findColor(248, 248, 248, 8, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10);
 };
 
 const isThereMouseIcon = () => {
-  return findColor(91, 87, 76, 2, 40, 20, screensize.width / 2, 60);
+  return findColor(91, 87, 76, 1, 40, 20, screensize.width / 2, 60);
 };
 
 // Recursive setTimeout for that async operations in function body, instead of setInterval
