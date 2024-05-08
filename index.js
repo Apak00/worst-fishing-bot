@@ -1,38 +1,26 @@
 let robot = require("robotjs");
 const delay = require("delay");
 const { captureImage } = require("./capture");
+const { getAvgColor } = require("./getAvgColor");
+
+// Did this inside the source of robotjs https://github.com/octalmage/robotjs/issues/252 and rebuild robotjs
 
 const screensize = robot.getScreenSize();
-const startDelay = 5000;
 
-let fishinstarted;
-let finderId;
-let repairCounter = 0;
-
-const seizeFishin = async () => {
-  if (!fishinstarted && isThereMouseIcon()) {
-    robot.mouseToggle("down");
-    fishinstarted = true;
-    await pullFish();
-  }
-
-  setTimeout(seizeFishin, 500);
+const totemColor = {
+  R: 243,
+  G: 222,
+  B: 196,
 };
-
-const pullFish = async () => {
-  console.log("PULL");
-  repairCounter++;
-
-  let pullCount = 0;
-  while (pullCount < 8) {
-    pullCount++;
-    robot.mouseToggle("down");
-    await delay(2000);
-    robot.mouseToggle("up");
-    await delay(1300);
-  }
-  pullCount = 0;
-  fishinstarted = false;
+const totemFeather = {
+  R: 254,
+  G: 67,
+  B: 42,
+};
+const greenBar = {
+  R: 65,
+  G: 119,
+  B: 36,
 };
 
 const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, corY, capture) => {
@@ -62,55 +50,77 @@ const findColor = (targetR, targetG, targetB, failMargin, width, height, corX, c
   return false;
 };
 
-const repair = async () => {
-  robot.keyTap("tab");
-  await delay(1000);
-  robot.moveMouse(screensize.width / 2 - 350, screensize.height - 50);
-  await delay(1000);
-  robot.mouseClick();
-  await delay(1000);
-  robot.moveMouse(screensize.width / 2 + 100, screensize.height / 2 + 120);
-  await delay(1000);
-  robot.mouseClick();
-  await delay(1000);
-  robot.keyTap("escape");
-  await delay(2000);
-  robot.keyTap("f3");
-  await delay(2000);
-};
-
-const startIfStopped = async () => {
-  if (isCrossHairOn() && !fishinstarted) {
-    console.log("FOUND STOPPED", repairCounter);
-    fishinstarted = true;
-     robot.moveMouse(robot.getMousePos().x, robot.getMousePos().y + 150);
-
-    if (repairCounter > 20) {
-      await delay(2000);
-      repairCounter = 0;
-      await repair();
+const catchFish = async () => {
+  if (isGreenBarOn()) {
+    while (isCrossHairOn()) {
+      robot.mouseToggle("down");
     }
-
-    robot.mouseToggle("down");
-    await delay(2000);
     robot.mouseToggle("up");
-    await delay(1000);
-
-    fishinstarted = false;
-    setTimeout(startIfStopped, 5000);
+    catchFish();
+  } else {
+    robot.mouseToggle("up");
+    throwHook();
   }
 };
 
 const isCrossHairOn = () => {
-  return findColor(248, 248, 248, 8, 20, 20, screensize.width / 2 - 10, screensize.height / 2 - 10);
+  return findColor(totemColor.R, totemColor.G, totemColor.B, 20, 60, 10, screensize.width / 2 - 30, screensize.height / 2);
+};
+const isGreenBarOn = () => {
+  return findColor(greenBar.R, greenBar.G, greenBar.B, 25, 50, 20, screensize.width / 2 - 50, screensize.height / 2);
 };
 
-const isThereMouseIcon = () => {
-  return findColor(91, 87, 76, 1, 40, 20, screensize.width / 2, 60);
+let counter = 0;
+const throwHook = async () => {
+  console.log("THROW");
+  let totemAvgColor = null;
+  const randomRad = Math.PI + Math.PI * ((45 + Math.random() * 90) / 180);
+  await delay(2000);
+  counter++;
+  if (counter % 10 === 0) {
+    robot.keyTap("1");
+  }
+  if (counter % 100 === 0) {
+    robot.moveMouse(screensize.width - 350, screensize.height / 2);
+    await delay(100);
+    robot.mouseClick("right");
+  }
+
+  await delay(2500);
+  const coordinatesOfTotem = {
+    x: screensize.width / 2 + Math.cos(randomRad) * 380 + Math.cos(randomRad) * 80,
+    y: screensize.height / 2 + -Math.sin(randomRad) * 380 - Math.sin(randomRad) * 180 - 230,
+  };
+  robot.moveMouse(screensize.width / 2 + Math.cos(randomRad) * 180, screensize.height / 2 + -Math.sin(randomRad) * 180 - 100);
+  await delay(100);
+  robot.mouseToggle("down");
+  await delay(500);
+  robot.mouseToggle("up");
+  await delay(2000);
+  totemAvgColor = getAvgColor(80, 80, coordinatesOfTotem.x - 40, coordinatesOfTotem.y - 40, true);
+  let newColor = null;
+  let failMargin = 6;
+  let searchCounter = 0;
+  while (
+    !newColor ||
+    (newColor.G > totemAvgColor.G - failMargin &&
+      newColor.G < totemAvgColor.G + failMargin &&
+      newColor.B > totemAvgColor.B - failMargin &&
+      newColor.B < totemAvgColor.B + failMargin &&
+      searchCounter < 2000)
+  ) {
+    searchCounter++;
+    newColor = getAvgColor(80, 80, coordinatesOfTotem.x - 40, coordinatesOfTotem.y - 40);
+  }
+  if (searchCounter > 2000) {
+    return throwHook();
+  }
+  console.log("searchCounter: ", searchCounter);
+  console.log("FOUND FISH: ", counter);
+  await delay(500);
+  robot.mouseToggle("down");
+  await delay(150);
+  catchFish();
 };
 
-// Recursive setTimeout for that async operations in function body, instead of setInterval
-seizeFishin();
-setInterval(startIfStopped, 5000);
-
-// Did this inside the source of robotjs https://github.com/octalmage/robotjs/issues/252 and rebuild robotjs
+throwHook();

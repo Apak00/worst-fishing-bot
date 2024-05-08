@@ -1,6 +1,6 @@
 let Jimp = require("jimp");
 
-const captureImage = (img) => {
+const captureImage = (img, fileName) => {
   function screenCaptureToFile(robotScreenPic) {
     return new Promise((resolve, reject) => {
       try {
@@ -21,9 +21,12 @@ const captureImage = (img) => {
       }
     });
   }
+  console.log("ahoy434");
 
   screenCaptureToFile(img).then((res) => {
-    res.write("asd.png");
+    console.log("ahoy saved to file");
+    res.write(typeof fileName === "string" ? fileName : "asd.png");
   });
 };
+
 module.exports = { captureImage };
