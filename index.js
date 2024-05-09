@@ -91,13 +91,13 @@ const throwHook = async () => {
     x: screensize.width / 2 + Math.cos(randomRad) * 380 + Math.cos(randomRad) * 80,
     y: screensize.height / 2 + -Math.sin(randomRad) * 380 - Math.sin(randomRad) * 180 - 230,
   };
-  robot.moveMouse(screensize.width / 2 + Math.cos(randomRad) * 180, screensize.height / 2 + -Math.sin(randomRad) * 180 - 100);
+  robot.moveMouse(screensize.width / 2 + Math.cos(randomRad) * 210, screensize.height / 2 + -Math.sin(randomRad) * 210 - 100);
   await delay(100);
   robot.mouseToggle("down");
   await delay(500);
   robot.mouseToggle("up");
   await delay(2000);
-  totemAvgColor = getAvgColor(80, 80, coordinatesOfTotem.x - 40, coordinatesOfTotem.y - 40, true);
+  totemAvgColor = getAvgColor(80, 80, coordinatesOfTotem.x - 40, coordinatesOfTotem.y - 40);
   let newColor = null;
   let failMargin = 6;
   let searchCounter = 0;
@@ -107,12 +107,12 @@ const throwHook = async () => {
       newColor.G < totemAvgColor.G + failMargin &&
       newColor.B > totemAvgColor.B - failMargin &&
       newColor.B < totemAvgColor.B + failMargin &&
-      searchCounter < 2000)
+      searchCounter < 1700)
   ) {
     searchCounter++;
     newColor = getAvgColor(80, 80, coordinatesOfTotem.x - 40, coordinatesOfTotem.y - 40);
   }
-  if (searchCounter > 2000) {
+  if (searchCounter > 1700) {
     return throwHook();
   }
   console.log("searchCounter: ", searchCounter);
