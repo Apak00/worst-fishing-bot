@@ -77,27 +77,29 @@ const throwHook = async () => {
   const randomRad = Math.PI + Math.PI * ((45 + Math.random() * 90) / 180);
   await delay(2000);
   counter++;
-  if (counter % 10 === 0) {
+  if (counter % 12 === 0) {
     robot.keyTap("1");
   }
-  if (counter % 100 === 0) {
+  if (counter % 120 === 0) {
     robot.moveMouse(screensize.width - 350, screensize.height / 2);
     await delay(100);
     robot.mouseClick("right");
   }
 
   await delay(2500);
+  const rngTime = Math.random();
+  const baseDistance = 260 + rngTime * 240;
   const coordinatesOfTotem = {
-    x: screensize.width / 2 + Math.cos(randomRad) * 380 + Math.cos(randomRad) * 80,
-    y: screensize.height / 2 + -Math.sin(randomRad) * 380 - Math.sin(randomRad) * 180 - 230,
+    x: screensize.width / 2 + Math.cos(randomRad) * baseDistance + Math.cos(randomRad) * 80,
+    y: screensize.height / 2 + -Math.sin(randomRad) * baseDistance - Math.sin(randomRad) * 180 - 230,
   };
   robot.moveMouse(screensize.width / 2 + Math.cos(randomRad) * 210, screensize.height / 2 + -Math.sin(randomRad) * 210 - 100);
   await delay(100);
   robot.mouseToggle("down");
-  await delay(500);
+  await delay(300 + 400 * rngTime);
   robot.mouseToggle("up");
   await delay(2000);
-  totemAvgColor = getAvgColor(80, 80, coordinatesOfTotem.x - 40, coordinatesOfTotem.y - 40);
+  totemAvgColor = getAvgColor(80, 80, coordinatesOfTotem.x - 40, coordinatesOfTotem.y - 40, true);
   let newColor = null;
   let failMargin = 6;
   let searchCounter = 0;
